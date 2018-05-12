@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "ostream": "cpp",
+    "rope": "cpp",
+    "*.ipp": "cpp",
+    "chrono": "cpp",
+    "cmath": "cpp"
+  }
+}
