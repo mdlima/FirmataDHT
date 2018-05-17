@@ -26,7 +26,7 @@ FirmataDHT::FirmataDHT()
 {
 }
 
-void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, uint32_t samplingInterval /* = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL */)
+void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, bool blockingReads, uint32_t samplingInterval /* = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL */)
 {
   if (isAttached())
   {
@@ -40,6 +40,7 @@ void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, uint
     return;
   }
 
+  m_blockingReads = blockingReads;
   m_samplingInterval = max(samplingInterval, DHT_SENSOR_MINIMUM_UPDATE_INTERVAL);
   // The sensor needs ~2 sec to initialize, so no response before this call
   // TODO: make sure update is not requested before initialization time
@@ -103,15 +104,19 @@ boolean FirmataDHT::handleSysex(byte command, byte argc, byte *argv)
       }
 
       idDHTLib::DHTType sensorType = (dhtCommand == DHTSENSOR_ATTACH_DHT11) ? idDHTLib::DHTType::DHT11 : idDHTLib::DHTType::DHT22;
+      bool blockingReads = false;
       unsigned long samplingInterval = 0;
-      if (argc > 3) {
-        samplingInterval = argv[2] | (argv[3] << 7);
-        if ((argc > 4) && (argv[4] > 0)) {
-          samplingInterval = samplingInterval * 1000;
+      if (argc > 2) {
+        blockingReads = (bool) argv[2];
+        if (argc > 4) {
+          samplingInterval = argv[3] | (argv[4] << 7);
+          if ((argc > 5) && argv[5]) {
+            samplingInterval = samplingInterval * 1000;
+          }
         }
       }
 
-      attachDHTSensor(pinNum, sensorType, samplingInterval);
+      attachDHTSensor(pinNum, sensorType, blockingReads, samplingInterval);
       return true;
     }
 
@@ -165,7 +170,6 @@ void FirmataDHT::update()
     switch (result)
     {
     case IDDHTLIB_OK: 
-      // Firmata.sendString("DHTSensor: OK");
       m_lastUpdateMillis = currentMillis;
       report();
       return;
@@ -200,7 +204,14 @@ void FirmataDHT::update()
   {
     // Time to get new values from sensor
     // Firmata.sendString("DHTSensor: start acquiring.");
-    m_dhtSensor->acquireFastLoop();
+    if (m_blockingReads) {
+      // Most of the acquire process is non-blocking, but the start up is very time sensitive
+      // Will block for 18ms when sending the start signal to the sensor
+      m_dhtSensor->acquire();
+    } else {
+      // Without the blocking, update() has to be called every < 10ms
+      m_dhtSensor->acquireFastLoop();
+    }
     m_acquiring = true;
   }
 }

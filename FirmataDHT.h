@@ -27,7 +27,7 @@
 
 #define DHTSENSOR_DETACH        (0x00)
 #define DHTSENSOR_ATTACH_DHT11  (0x01)
-#define DHTSENSOR_ATTACH_DHT22  (0x00)
+#define DHTSENSOR_ATTACH_DHT22  (0x02)
 
 class FirmataDHT : public FirmataFeature
 {
@@ -44,7 +44,7 @@ public:
   // FirmataDHT implementation
   void update();
   boolean isAttached();
-  void attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, uint32_t samplingInterval = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL);
+  void attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, bool blockingReads = false, uint32_t samplingInterval = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL);
   void detachDHTSensor();
 
 private:
@@ -54,6 +54,7 @@ private:
   idDHTLib *m_dhtSensor = nullptr;
   bool m_initialized = false;
   bool m_acquiring = false;
+  bool m_blockingReads = false;
 
   void report();
 };
