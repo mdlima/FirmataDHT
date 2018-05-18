@@ -104,22 +104,27 @@ boolean FirmataDHT::handleSysex(byte command, byte argc, byte *argv)
       }
 
       idDHTLib::DHTType sensorType = (dhtCommand == DHTSENSOR_ATTACH_DHT11) ? idDHTLib::DHTType::DHT11 : idDHTLib::DHTType::DHT22;
-      bool blockingReads = false;
-      unsigned long samplingInterval = 0;
       if (argc > 2) {
-        blockingReads = (bool) argv[2];
-        if (argc > 4) {
-          samplingInterval = argv[3] | (argv[4] << 7);
-          if ((argc > 5) && argv[5]) {
-            samplingInterval = samplingInterval * 1000;
+        bool blockingReads = (bool) argv[2];
+        if (argc > 3) {
+          unsigned long samplingInterval = 0;
+          for (uint8_t i = 3; i < argc; i++) {
+            samplingInterval |= long(argv[i] & 0x7F) << ((i - 3) * 7);
           }
+          if (argv[argc - 1] & 0b01000000) {
+            // Last higher bit is 1, so fill the remaining bits with 1's
+            samplingInterval |= -1 << (7 * (argc - 3));
+          }
+          attachDHTSensor(pinNum, sensorType, blockingReads, samplingInterval);
+        } else {
+          attachDHTSensor(pinNum, sensorType, blockingReads);
         }
+      } else {
+        attachDHTSensor(pinNum, sensorType);
       }
 
-      attachDHTSensor(pinNum, sensorType, blockingReads, samplingInterval);
       return true;
     }
-
 
     if (dhtCommand == DHTSENSOR_DETACH)
     {
