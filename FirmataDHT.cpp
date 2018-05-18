@@ -26,7 +26,7 @@ FirmataDHT::FirmataDHT()
 {
 }
 
-void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, bool blockingReads, uint32_t samplingInterval /* = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL */)
+void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, bool blockingReads /* = false */, uint32_t samplingInterval /* = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL */)
 {
   if (isAttached())
   {
@@ -42,13 +42,12 @@ void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, bool
 
   m_blockingReads = blockingReads;
   m_samplingInterval = max(samplingInterval, DHT_SENSOR_MINIMUM_UPDATE_INTERVAL);
-  // The sensor needs ~2 sec to initialize, so no response before this call
-  // TODO: make sure update is not requested before initialization time
-  m_lastUpdateMillis = millis() + DHT_SENSOR_INIT_TIME - m_samplingInterval;;
+  m_lastUpdateMillis = millis();
 
   Firmata.setPinMode(pinNum, PIN_MODE_DHT);
   m_dhtSensor = new idDHTLib(pinNum, sensorType);
-  // Firmata.sendString("DHT INFO: sensor attached.");
+  // Give the sensor a kick as the first read is always timing out
+  m_dhtSensor->acquireFastLoop();
 }
 
 void FirmataDHT::detachDHTSensor()
@@ -57,7 +56,6 @@ void FirmataDHT::detachDHTSensor()
   {
     free(m_dhtSensor);
     m_dhtSensor = nullptr;
-    // m_attachedPin = NOT_A_PIN;
   }
 }
 
@@ -167,8 +165,8 @@ void FirmataDHT::update()
 
   unsigned long currentMillis = millis();
 
-  if (m_acquiring) // was acquiring, now is finished
-  {
+  if (m_acquiring) {
+    // was acquiring, now is finished
     m_acquiring = false;
 
     int result = m_dhtSensor->getStatus();
@@ -200,18 +198,14 @@ void FirmataDHT::update()
     }
 
     // error, retry in a few ms
-    m_lastUpdateMillis = currentMillis + DHT_SENSOR_RETRY_INTERVAL - m_samplingInterval;
+    m_lastUpdateMillis += DHT_SENSOR_RETRY_INTERVAL;
   }
 
-  // When millis() wrap the unsigned long limit, this will make it wait longer for the update
-  // but most of the time it's useful (for sensor init time and timeouts)
-  if (m_dhtSensor && (currentMillis > m_lastUpdateMillis) && ((currentMillis - m_lastUpdateMillis) > m_samplingInterval))
-  {
+  if ((currentMillis - m_lastUpdateMillis) > m_samplingInterval) {
     // Time to get new values from sensor
-    // Firmata.sendString("DHTSensor: start acquiring.");
     if (m_blockingReads) {
       // Most of the acquire process is non-blocking, but the start up is very time sensitive
-      // Will block for 18ms when sending the start signal to the sensor
+      // This call will block for 18ms when sending the start signal to the sensor
       m_dhtSensor->acquire();
     } else {
       // Without the blocking, update() has to be called every < 10ms

@@ -21,13 +21,12 @@
 
 #include <idDHTLib.h>
 
-#define DHT_SENSOR_MINIMUM_UPDATE_INTERVAL 500 // sensor is too slow, so don't update more frequent than this
-#define DHT_SENSOR_INIT_TIME 3000 // sensor needs to initialize before first update
-#define DHT_SENSOR_RETRY_INTERVAL 1000 // time to wait before retrying after unsuccessful read
+#define DHT_SENSOR_MINIMUM_UPDATE_INTERVAL 2000 // sensor is too slow, so don't update more frequent than this
+#define DHT_SENSOR_RETRY_INTERVAL 500
 
-#define DHTSENSOR_DETACH        (0x00)
-#define DHTSENSOR_ATTACH_DHT11  (0x01)
-#define DHTSENSOR_ATTACH_DHT22  (0x02)
+#define DHTSENSOR_DETACH             0x00
+#define DHTSENSOR_ATTACH_DHT11       0x01 // DHT11 sensor
+#define DHTSENSOR_ATTACH_DHT22       0x02 // DHT22 or AM2302 sensor
 
 class FirmataDHT : public FirmataFeature
 {
@@ -48,11 +47,9 @@ public:
   void detachDHTSensor();
 
 private:
-  // uint8_t m_attachedPin = NOT_A_PIN;
   uint32_t m_samplingInterval = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL;
   unsigned long m_lastUpdateMillis = 0;
   idDHTLib *m_dhtSensor = nullptr;
-  bool m_initialized = false;
   bool m_acquiring = false;
   bool m_blockingReads = false;
 
