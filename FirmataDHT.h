@@ -24,9 +24,10 @@
 #define DHT_SENSOR_MINIMUM_UPDATE_INTERVAL 2000 // sensor is too slow, so don't update more frequent than this
 #define DHT_SENSOR_RETRY_INTERVAL 500
 
-#define DHTSENSOR_DETACH             0x00
+#define DHTSENSOR_RESPONSE           0x00
 #define DHTSENSOR_ATTACH_DHT11       0x01 // DHT11 sensor
-#define DHTSENSOR_ATTACH_DHT22       0x02 // DHT22 or AM2302 sensor
+#define DHTSENSOR_ATTACH_DHT22       0x02 // DHT22, DHT21 or AM2302 sensor
+#define DHTSENSOR_DETACH             0x03
 
 class FirmataDHT : public FirmataFeature
 {
@@ -50,6 +51,7 @@ private:
   uint32_t m_samplingInterval = DHT_SENSOR_MINIMUM_UPDATE_INTERVAL;
   unsigned long m_lastUpdateMillis = 0;
   idDHTLib *m_dhtSensor = nullptr;
+  byte m_pinNum = NOT_A_PIN;
   bool m_acquiring = false;
   bool m_blockingReads = false;
 

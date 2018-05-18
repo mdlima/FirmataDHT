@@ -40,12 +40,13 @@ void FirmataDHT::attachDHTSensor(byte pinNum, idDHTLib::DHTType sensorType, bool
     return;
   }
 
+  m_pinNum = pinNum;
   m_blockingReads = blockingReads;
   m_samplingInterval = max(samplingInterval, DHT_SENSOR_MINIMUM_UPDATE_INTERVAL);
   m_lastUpdateMillis = millis();
 
-  Firmata.setPinMode(pinNum, PIN_MODE_DHT);
-  m_dhtSensor = new idDHTLib(pinNum, sensorType);
+  Firmata.setPinMode(m_pinNum, PIN_MODE_DHT);
+  m_dhtSensor = new idDHTLib(m_pinNum, sensorType);
   // Give the sensor a kick as the first read is always timing out
   m_dhtSensor->acquireFastLoop();
 }
@@ -150,8 +151,10 @@ void FirmataDHT::report()
   if (!isAttached()) return;
   Firmata.startSysex();
   Firmata.write(DHTSENSOR_DATA);
+  Firmata.write(DHTSENSOR_RESPONSE);
+  Firmata.write(m_pinNum);
   Firmata.sendValueAsTwo7bitBytes(int16_t(round(m_dhtSensor->getCelsius() * 10)));
-  Firmata.sendValueAsTwo7bitBytes(uint16_t(round(m_dhtSensor->getHumidity() * 100)));
+  Firmata.sendValueAsTwo7bitBytes(int16_t(round(m_dhtSensor->getHumidity() * 10)));
   Firmata.endSysex();
 }
 
