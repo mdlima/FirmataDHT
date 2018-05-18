@@ -2,7 +2,7 @@
 
 A Firmata wrapper for connectig to a DHT Sensor. To be used with [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata).
 
-This library adds support for DHT11 and DHT22 sensors to ConfigurableFirmata. It wraps the nice [idDHT](https://github.com/niesteszeck/idDHTLib) library, that uses interrupts to communicate with the DHT sensor and reduce blocking (it's a very slow sensor).
+This library adds support for DHT11 and DHT22 (also called AM2302) sensors to ConfigurableFirmata. It wraps the nice [idDHT](https://github.com/niesteszeck/idDHTLib) library, that uses interrupts to communicate with the DHT sensor and reduce blocking (it's a very slow sensor).
 
 The sensor must be connected to interrupt pins for the library to work.
 
